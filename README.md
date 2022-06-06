@@ -1,2 +1,3 @@
-# passwordme-backend
-A password manager: little project for the modern programming languages subject.
+# PasswordMe
+
+Password Manager for personal use. Project for modern programming languages subject.
