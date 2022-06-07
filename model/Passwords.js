@@ -5,7 +5,7 @@ const passwordsSchema = mongoose.Schema({
     type: String,
     required: true,
   },
-  passwords: [
+  list: [
     {
       id_category: Array,
       title: String,
