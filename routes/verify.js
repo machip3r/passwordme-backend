@@ -4,7 +4,7 @@ const verify = (request, result, next) => {
   const token = request.header("AuthToken");
   if (!token)
     return result.status(400).json({
-      error: "Access denied",
+      error: "Acceso denegado",
     });
 
   try {
@@ -13,7 +13,7 @@ const verify = (request, result, next) => {
     request.user = isVerified;
     next();
   } catch (error) {
-    result.status(400).json({ error: "Invalid token" });
+    result.status(400).json({ error: "Token inválido" });
   }
 };
 

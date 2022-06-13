@@ -30,11 +30,11 @@ router.post("/register", async (request, result) => {
     return result.status(400).json({ error: error.details[0].message });
   if (existentUser)
     return result.status(400).json({
-      error: "Username unavailable",
+      error: "Usuario no disponible",
     });
   if (existentEmail)
     return result.status(400).json({
-      error: "Email unavailable",
+      error: "Correo electrónico no disponible",
     });
 
   let encryptedPassword = encrypt(request.body.password);
@@ -55,9 +55,19 @@ router.post("/register", async (request, result) => {
 
     await passwordsData.save();
 
-    result.json({
+    const token = jwt.sign(
+      {
+        id: userSaved._id,
+        username: userSaved.username,
+      },
+      process.env.SECRET_TOKEN
+    );
+
+    const username = userSaved.username;
+
+    result.header("AuthToken", token).json({
       error: null,
-      data: userSaved,
+      data: { token, username },
     });
   } catch (error) {
     result.status(400).json({ error });
@@ -74,14 +84,14 @@ router.post("/login", async (request, result) => {
     return result.status(400).json({ error: error.details[0].message });
   if (!existentUser)
     return result.status(400).json({
-      error: "Incorrect username",
+      error: "Usuario no existe o es incorrecto",
     });
 
   let decryptedPassword = decrypt(existentUser.password);
 
   if (decryptedPassword != request.body.password)
     return result.status(400).json({
-      error: "Incorrect password",
+      error: "Contraseña incorrecta",
     });
 
   const token = jwt.sign(
@@ -92,9 +102,11 @@ router.post("/login", async (request, result) => {
     process.env.SECRET_TOKEN
   );
 
+  const username = existentUser.username;
+
   result.header("AuthToken", token).json({
     error: null,
-    data: { token },
+    data: { token, username },
   });
   try {
   } catch (error) {
