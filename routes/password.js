@@ -74,6 +74,55 @@ router.post("/addPassword", async (request, result) => {
   });
 });
 
+router.post("/editPassword", async (request, result) => {
+  let logo = new ClearbitLogo(),
+    passwordsList = request.body;
+
+  if (passwordsList.newPassword.url != "")
+    passwordsList.newPassword.urlLogo = await logo.image(
+      passwordsList.newPassword.url,
+      { size: 500 }
+    );
+
+  if (
+    passwordsList.newPassword.urlLogo == "" ||
+    passwordsList.newPassword.urlLogo == null
+  )
+    passwordsList.newPassword.urlLogo =
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Grey_close_x.svg/1024px-Grey_close_x.svg.png";
+
+  passwordsList.newPassword.password = encrypt(
+    passwordsList.newPassword.password
+  );
+
+  await Passwords.updateOne(
+    {
+      id_user: passwordsList.id_user,
+      "list._id": passwordsList.newPassword._id,
+    },
+    {
+      $set: {
+        "list.$.id_category": passwordsList.newPassword.id_category,
+        "list.$.title": passwordsList.newPassword.title,
+        "list.$.username": passwordsList.newPassword.username,
+        "list.$.email": passwordsList.newPassword.email,
+        "list.$.password": passwordsList.newPassword.password,
+        "list.$.notes": passwordsList.newPassword.notes,
+        "list.$.url": passwordsList.newPassword.url,
+        "list.$.urlLogo": passwordsList.newPassword.urlLogo,
+        "list.$.date": passwordsList.newPassword.date,
+      },
+    }
+  );
+
+  const message = "OK";
+
+  result.json({
+    error: null,
+    data: { message },
+  });
+});
+
 router.post("/deletePassword", async (request, result) => {
   await Passwords.updateOne(
     { id_user: request.body.id_user },
@@ -85,6 +134,24 @@ router.post("/deletePassword", async (request, result) => {
   result.json({
     error: null,
     data: { message },
+  });
+});
+
+router.post("/encryptPassword", async (request, result) => {
+  let encryptedPassword = encrypt(request.body.password);
+
+  result.json({
+    error: null,
+    data: { encryptedPassword },
+  });
+});
+
+router.post("/decryptPassword", async (request, result) => {
+  let decryptedPassword = decrypt(request.body.password);
+
+  result.json({
+    error: null,
+    data: { decryptedPassword },
   });
 });
 

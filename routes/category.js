@@ -76,4 +76,33 @@ router.post("/deleteCategory", async (request, result) => {
   });
 });
 
+router.get("/:id_user/:c", async (request, result) => {
+  let passwords = await Passwords.find({
+    id_user: request.params.id_user,
+    "list.id_category": request.params.c,
+  });
+
+  let newPasswords = [];
+
+  if (typeof passwords[0] !== "undefined") {
+    passwords[0].list.forEach(
+      (element) =>
+        (element.id_category = element.id_category.filter(
+          (value) => value === request.params.c
+        ))
+    );
+
+    passwords[0].list.forEach((element) => {
+      if (element.id_category.length != 0) newPasswords.push(element);
+    });
+  }
+
+  result.json({
+    error: null,
+    data: {
+      passwords: newPasswords == null ? null : newPasswords,
+    },
+  });
+});
+
 module.exports = router;
