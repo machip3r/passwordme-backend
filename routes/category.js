@@ -20,6 +20,7 @@ router.get("/:id_user", async (request, result) => {
 
 router.post("/addCategory", async (request, result) => {
   let existentCategory = await Category.findOne({
+    id_user: request.body.id_user,
     category: request.body.category,
   });
 
