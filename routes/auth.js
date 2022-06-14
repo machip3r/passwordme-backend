@@ -63,11 +63,12 @@ router.post("/register", async (request, result) => {
       process.env.SECRET_TOKEN
     );
 
-    const username = userSaved.username;
+    const username = userSaved.username,
+      id_user = userSaved._id;
 
     result.header("AuthToken", token).json({
       error: null,
-      data: { token, username },
+      data: { token, id_user, username },
     });
   } catch (error) {
     result.status(400).json({ error });
@@ -102,11 +103,12 @@ router.post("/login", async (request, result) => {
     process.env.SECRET_TOKEN
   );
 
-  const username = existentUser.username;
+  const username = existentUser.username,
+    id_user = existentUser._id;
 
   result.header("AuthToken", token).json({
     error: null,
-    data: { token, username },
+    data: { token, id_user, username },
   });
   try {
   } catch (error) {
