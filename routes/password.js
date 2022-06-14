@@ -1,40 +1,65 @@
 const router = require("express").Router();
 
 const Passwords = require("../model/Passwords.js");
-const Category = require("../model/Category.js");
 
+const crypto = require("crypto-js");
 const ClearbitLogo = require("clearbit-logo");
 
-router.get("/", async (request, result) => {
+router.get("/:id_user", async (request, result) => {
   let passwords = await Passwords.findOne({
-      id_user: request.user.id,
-    }),
-    categories = await Category.find({
-      id_user: request.user.id,
-    });
+    id_user: request.params.id_user,
+  });
 
   result.json({
     error: null,
     data: {
-      categories: categories,
-      passwords: passwords,
+      passwords: passwords == null ? null : passwords.list,
     },
   });
 });
 
 router.post("/addPassword", async (request, result) => {
   let logo = new ClearbitLogo(),
-    passwordsList = request.body;
+    passwordsList = request.body,
+    theresStructure = await Passwords.findOne({
+      id_user: passwordsList.id_user,
+    });
 
-  let passwords = await Passwords.findOne({
+  if (theresStructure == null) {
+    let passwordsInitData = new Passwords({
+      id_user: passwordsList.id_user,
+      passwords: [],
+    });
+
+    await passwordsInitData.save();
+  }
+
+  let repeatedTitle = await Passwords.findOne({
     id_user: passwordsList.id_user,
+    "list.title": passwordsList.passwordArray.title,
   });
+
+  if (repeatedTitle)
+    return result.status(400).json({
+      error: "Ese contraseña ya existe, prueba con otro título",
+    });
 
   if (passwordsList.passwordArray.url != "")
     passwordsList.passwordArray.urlLogo = await logo.image(
       passwordsList.passwordArray.url,
-      { size: 100 }
+      { size: 500 }
     );
+
+  if (
+    passwordsList.passwordArray.urlLogo == "" ||
+    passwordsList.passwordArray.urlLogo == null
+  )
+    passwordsList.passwordArray.urlLogo =
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Grey_close_x.svg/1024px-Grey_close_x.svg.png";
+
+  passwordsList.passwordArray.password = encrypt(
+    passwordsList.passwordArray.password
+  );
 
   await Passwords.updateOne(
     { id_user: passwordsList.id_user },
@@ -48,5 +73,29 @@ router.post("/addPassword", async (request, result) => {
     data: { message },
   });
 });
+
+router.post("/deletePassword", async (request, result) => {
+  await Passwords.updateOne(
+    { id_user: request.body.id_user },
+    { $pull: { list: { _id: request.body.id_password } } }
+  );
+
+  const message = "OK";
+
+  result.json({
+    error: null,
+    data: { message },
+  });
+});
+
+const encrypt = (text) => {
+  return crypto.AES.encrypt(text, process.env.SECRET_TOKEN).toString();
+};
+
+const decrypt = (ciphertext) => {
+  return crypto.AES.decrypt(ciphertext, process.env.SECRET_TOKEN).toString(
+    crypto.enc.Utf8
+  );
+};
 
 module.exports = router;
