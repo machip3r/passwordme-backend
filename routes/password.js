@@ -1,12 +1,13 @@
 const router = require("express").Router();
 
-const Passwords = require("../model/Passwords.js");
-
 const crypto = require("crypto-js");
+const PasswordMeterModule = require("password-meter");
 const ClearbitLogo = require("clearbit-logo");
 
+const Passwords = require("../model/Passwords.js");
+
 router.get("/:id_user", async (request, result) => {
-  let passwords = await Passwords.findOne({
+  const passwords = await Passwords.findOne({
     id_user: request.params.id_user,
   });
 
@@ -19,7 +20,7 @@ router.get("/:id_user", async (request, result) => {
 });
 
 router.post("/addPassword", async (request, result) => {
-  let logo = new ClearbitLogo(),
+  const logo = new ClearbitLogo(),
     passwordsList = request.body,
     theresStructure = await Passwords.findOne({
       id_user: passwordsList.id_user,
@@ -34,7 +35,7 @@ router.post("/addPassword", async (request, result) => {
     await passwordsInitData.save();
   }
 
-  let repeatedTitle = await Passwords.findOne({
+  const repeatedTitle = await Passwords.findOne({
     id_user: passwordsList.id_user,
     "list.title": passwordsList.passwordArray.title,
   });
@@ -43,13 +44,11 @@ router.post("/addPassword", async (request, result) => {
     return result.status(400).json({
       error: "Ese contraseña ya existe, prueba con otro título",
     });
-
   if (passwordsList.passwordArray.url != "")
     passwordsList.passwordArray.urlLogo = await logo.image(
       passwordsList.passwordArray.url,
       { size: 500 }
     );
-
   if (
     passwordsList.passwordArray.urlLogo == "" ||
     passwordsList.passwordArray.urlLogo == null
@@ -75,7 +74,7 @@ router.post("/addPassword", async (request, result) => {
 });
 
 router.post("/editPassword", async (request, result) => {
-  let logo = new ClearbitLogo(),
+  const logo = new ClearbitLogo(),
     passwordsList = request.body;
 
   if (passwordsList.newPassword.url != "")
@@ -83,7 +82,6 @@ router.post("/editPassword", async (request, result) => {
       passwordsList.newPassword.url,
       { size: 500 }
     );
-
   if (
     passwordsList.newPassword.urlLogo == "" ||
     passwordsList.newPassword.urlLogo == null
@@ -103,7 +101,6 @@ router.post("/editPassword", async (request, result) => {
     {
       $set: {
         "list.$.id_category": passwordsList.newPassword.id_category,
-        "list.$.title": passwordsList.newPassword.title,
         "list.$.username": passwordsList.newPassword.username,
         "list.$.email": passwordsList.newPassword.email,
         "list.$.password": passwordsList.newPassword.password,
@@ -137,6 +134,18 @@ router.post("/deletePassword", async (request, result) => {
   });
 });
 
+router.post("/checkPasswordSecurity", async (request, result) => {
+  const pmeter = new PasswordMeterModule.PasswordMeter(),
+    securityResult = await pmeter.getResult(request.body.password);
+
+  let security = securityResult.percent;
+
+  result.json({
+    error: null,
+    data: { security },
+  });
+});
+
 router.post("/encryptPassword", async (request, result) => {
   let encryptedPassword = encrypt(request.body.password);
 
@@ -155,14 +164,12 @@ router.post("/decryptPassword", async (request, result) => {
   });
 });
 
-const encrypt = (text) => {
-  return crypto.AES.encrypt(text, process.env.SECRET_TOKEN).toString();
-};
+const encrypt = (text) =>
+  crypto.AES.encrypt(text, process.env.SECRET_TOKEN).toString();
 
-const decrypt = (ciphertext) => {
-  return crypto.AES.decrypt(ciphertext, process.env.SECRET_TOKEN).toString(
+const decrypt = (ciphertext) =>
+  crypto.AES.decrypt(ciphertext, process.env.SECRET_TOKEN).toString(
     crypto.enc.Utf8
   );
-};
 
 module.exports = router;

@@ -12,6 +12,7 @@ const passwordsSchema = mongoose.Schema({
       username: String,
       email: String,
       password: String,
+      security: Number,
       notes: String,
       visits: Number,
       url: String,
